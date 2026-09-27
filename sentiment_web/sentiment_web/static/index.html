@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Phân tích cảm xúc đa phương thức</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',sans-serif;background:#f5f5f0;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:2rem 1rem}
+  .card{background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,0.08);padding:2rem;width:100%;max-width:640px}
+  h1{font-size:1.3rem;font-weight:600;margin-bottom:4px}
+  .sub{color:#888;font-size:13px;margin-bottom:1.5rem}
+  .chips{display:flex;gap:8px;margin-bottom:1.2rem;flex-wrap:wrap}
+  .chip{font-size:12px;padding:4px 10px;border-radius:20px;background:#f0f0ea;color:#555;border:none}
+  .tabs{display:flex;background:#f5f5f0;border-radius:10px;padding:4px;margin-bottom:1.2rem}
+  .tab{flex:1;padding:8px;border:none;background:transparent;border-radius:8px;cursor:pointer;font-size:14px;color:#666;transition:all .15s}
+  .tab.active{background:#fff;color:#222;font-weight:500;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+  textarea,input[type=text]{width:100%;border:1.5px solid #e5e5e5;border-radius:10px;padding:10px 12px;font-size:14px;resize:vertical;outline:none;transition:border .15s;font-family:inherit}
+  textarea:focus,input:focus{border-color:#7f77dd}
+  .btn{width:100%;padding:11px;border:none;border-radius:10px;background:#534AB7;color:#fff;font-size:15px;font-weight:500;cursor:pointer;margin-top:10px;transition:opacity .15s}
+  .btn:hover{opacity:.88}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn.danger{background:#e24b4a}
+  .examples{margin-top:10px}
+  .examples p{font-size:12px;color:#aaa;margin-bottom:5px}
+  .ex-btn{font-size:12px;padding:4px 10px;border-radius:20px;border:1px solid #e5e5e5;background:#fff;cursor:pointer;color:#555;margin:3px 3px 0 0;transition:border .15s}
+  .ex-btn:hover{border-color:#534AB7;color:#534AB7}
+  #mic-wrap{text-align:center;padding:1rem 0}
+  #mic-btn{width:80px;height:80px;border-radius:50%;border:2px solid #e5e5e5;background:#f5f5f0;cursor:pointer;font-size:32px;transition:all .2s;display:inline-flex;align-items:center;justify-content:center}
+  #mic-btn.recording{border-color:#e24b4a;background:#fcebeb;animation:pulse 1.4s infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(226,75,74,.3)}50%{box-shadow:0 0 0 12px rgba(226,75,74,0)}}
+  #mic-label{font-size:13px;color:#888;margin-top:8px}
+  #transcript-box{background:#f5f5f0;border-radius:10px;padding:10px 12px;margin-top:10px;font-size:14px;min-height:48px;color:#444;line-height:1.5;display:none}
+  audio{width:100%;margin-top:10px;height:40px;border-radius:8px}
+  .result{margin-top:1.5rem;border-radius:12px;padding:1.2rem;display:none}
+  .result.neg{background:#fcebeb;border:1.5px solid #f09595}
+  .result.neu{background:#f5f5f0;border:1.5px solid #ccc}
+  .result.pos{background:#eaf3de;border:1.5px solid #97c459}
+  .result-header{display:flex;align-items:center;gap:12px;margin-bottom:1rem}
+  .result-icon{font-size:36px;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.5)}
+  .result-label{font-size:22px;font-weight:600}
+  .result-conf{font-size:13px;opacity:.7}
+  .bars{display:flex;flex-direction:column;gap:8px;margin-bottom:1rem}
+  .bar-row{display:flex;align-items:center;gap:8px}
+  .bar-name{font-size:13px;width:70px;color:#555}
+  .bar-track{flex:1;height:8px;background:rgba(255,255,255,.6);border-radius:99px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:99px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+  .bar-fill.neg{background:#e24b4a}
+  .bar-fill.neu{background:#888780}
+  .bar-fill.pos{background:#639922}
+  .bar-pct{font-size:13px;width:36px;text-align:right;color:#555}
+  .reasoning{border-top:1px solid rgba(0,0,0,.06);padding-top:10px;font-size:13px;color:#555;line-height:1.6}
+  .error{background:#fcebeb;border:1px solid #f09595;border-radius:10px;padding:10px 14px;color:#a32d2d;font-size:14px;margin-top:10px;display:none}
+  .loader{display:none;text-align:center;padding:1rem;color:#888;font-size:14px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .spinner{display:inline-block;width:18px;height:18px;border:2px solid #ccc;border-top-color:#534AB7;border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:6px}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🧠 Phân tích cảm xúc đa phương thức</h1>
+  <p class="sub">Audio–Text Sentiment Analysis · CMU-MOSEI · BERT + Transformer</p>
+
+  <div class="chips">
+    <span class="chip">🔤 BERT-base-uncased</span>
+    <span class="chip">🎵 Transformer Audio</span>
+    <span class="chip">⚡ Cross-modal Attention</span>
+    <span class="chip">📊 3 nhãn cảm xúc</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('text')">✍️ Nhập văn bản</button>
+    <button class="tab" onclick="switchTab('audio')">🎤 Ghi âm</button>
+  </div>
+
+  <!-- TEXT TAB -->
+  <div id="tab-text">
+    <textarea id="text-input" rows="4" placeholder="Nhập đoạn văn bản cần phân tích...&#10;&#10;Ví dụ: I really enjoyed the movie, the acting was incredible!"></textarea>
+    <button class="btn" onclick="analyzeText()">✨ Phân tích cảm xúc</button>
+    <div class="examples">
+      <p>Thử nhanh:</p>
+      <button class="ex-btn" onclick="setEx(this)">I really enjoyed it, so touching!</button>
+      <button class="ex-btn" onclick="setEx(this)">The weather is okay, nothing special.</button>
+      <button class="ex-btn" onclick="setEx(this)">I'm disappointed, total waste of time.</button>
+    </div>
+  </div>
+
+  <!-- AUDIO TAB -->
+  <div id="tab-audio" style="display:none">
+    <div id="mic-wrap">
+      <button id="mic-btn" onclick="toggleRecord()">🎤</button>
+      <div id="mic-label">Nhấn để bắt đầu ghi âm</div>
+    </div>
+    <div id="transcript-box"></div>
+    <audio id="audio-player" controls style="display:none"></audio>
+    <div style="margin-top:10px">
+      <label style="font-size:12px;color:#aaa;display:block;margin-bottom:4px">Hoặc nhập transcript thủ công:</label>
+      <input type="text" id="manual-transcript" placeholder="Nhập nội dung vừa nói..."/>
+    </div>
+    <button class="btn" id="analyze-audio-btn" onclick="analyzeAudio()" disabled>🎵 Phân tích âm thanh</button>
+  </div>
+
+  <!-- Loading -->
+  <div class="loader" id="loader">
+    <span class="spinner"></span> Đang phân tích...
+  </div>
+
+  <!-- Error -->
+  <div class="error" id="error"></div>
+
+  <!-- Result -->
+  <div class="result" id="result">
+    <div class="result-header">
+      <div class="result-icon" id="r-icon"></div>
+      <div>
+        <div class="result-label" id="r-label"></div>
+        <div class="result-conf" id="r-conf"></div>
+      </div>
+    </div>
+    <div class="bars" id="r-bars"></div>
+    <div class="reasoning" id="r-input"></div>
+  </div>
+</div>
+
+<script>
+const API = "http://localhost:8000";
+let currentTab = "text";
+let recording = false;
+let mediaRec = null;
+let chunks = [];
+let audioBlob = null;
+let speechRec = null;
+let transcriptText = "";
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll(".tab").forEach((t,i)=>t.classList.toggle("active", (i===0&&tab==="text")||(i===1&&tab==="audio")));
+  document.getElementById("tab-text").style.display = tab==="text"?"block":"none";
+  document.getElementById("tab-audio").style.display = tab==="audio"?"block":"none";
+  hideResult();
+}
+
+function setEx(btn) {
+  document.getElementById("text-input").value = btn.textContent;
+  hideResult();
+}
+
+function showLoader(){ document.getElementById("loader").style.display="block"; hideResult(); hideError(); }
+function hideLoader(){ document.getElementById("loader").style.display="none"; }
+function showError(msg){ const e=document.getElementById("error"); e.textContent=msg; e.style.display="block"; }
+function hideError(){ document.getElementById("error").style.display="none"; }
+function hideResult(){ document.getElementById("result").style.display="none"; }
+
+function showResult(data, inputText) {
+  const el = document.getElementById("result");
+  const icons = { Negative:"😢", Neutral:"😐", Positive:"😊" };
+  const cls   = { Negative:"neg", Neutral:"neu", Positive:"pos" };
+  el.className = "result " + cls[data.label];
+  document.getElementById("r-icon").textContent = icons[data.label];
+  document.getElementById("r-label").textContent = data.label;
+  document.getElementById("r-conf").textContent = `Độ tin cậy: ${Math.round(data.confidence*100)}% · ${data.mode}`;
+
+  const bars = document.getElementById("r-bars");
+  bars.innerHTML = "";
+  ["Negative","Neutral","Positive"].forEach(lbl => {
+    const pct = Math.round((data.scores[lbl]||0)*100);
+    bars.innerHTML += `
+      <div class="bar-row">
+        <span class="bar-name">${lbl}</span>
+        <div class="bar-track"><div class="bar-fill ${cls[lbl]}" style="width:${pct}%"></div></div>
+        <span class="bar-pct">${pct}%</span>
+      </div>`;
+  });
+
+  document.getElementById("r-input").innerHTML = `<strong>Đầu vào:</strong> "${inputText}"`;
+  el.style.display = "block";
+}
+
+async function analyzeText() {
+  const text = document.getElementById("text-input").value.trim();
+  if (!text) { showError("Vui lòng nhập văn bản."); return; }
+  showLoader();
+  try {
+    const res = await fetch(`${API}/predict/text`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    hideLoader();
+    showResult(data, text);
+  } catch(e) {
+    hideLoader();
+    showError("❌ Không kết nối được server. Hãy chắc backend đang chạy tại localhost:8000");
+  }
+}
+
+async function analyzeAudio() {
+  const transcript = transcriptText || document.getElementById("manual-transcript").value.trim();
+  if (!transcript && !audioBlob) { showError("Cần có transcript hoặc ghi âm."); return; }
+  showLoader();
+
+  try {
+    const form = new FormData();
+    if (transcript) form.append("text", transcript);
+    if (audioBlob)  form.append("audio", audioBlob, "recording.webm");
+
+    const res = await fetch(`${API}/predict/audio-text`, { method:"POST", body:form });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    hideLoader();
+    showResult(data, transcript || "(audio không có transcript)");
+  } catch(e) {
+    hideLoader();
+    showError("❌ Không kết nối được server. Hãy chắc backend đang chạy tại localhost:8000");
+  }
+}
+
+async function toggleRecord() {
+  if (!recording) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      chunks = []; transcriptText = "";
+      document.getElementById("transcript-box").style.display = "none";
+      document.getElementById("transcript-box").textContent = "";
+      document.getElementById("audio-player").style.display = "none";
+      audioBlob = null;
+
+      mediaRec = new MediaRecorder(stream);
+      mediaRec.ondataavailable = e => { if(e.data.size>0) chunks.push(e.data); };
+      mediaRec.onstop = () => {
+        audioBlob = new Blob(chunks, {type:"audio/webm"});
+        const url = URL.createObjectURL(audioBlob);
+        const player = document.getElementById("audio-player");
+        player.src = url; player.style.display = "block";
+        stream.getTracks().forEach(t=>t.stop());
+        document.getElementById("analyze-audio-btn").disabled = false;
+      };
+      mediaRec.start();
+
+      if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        speechRec = new SR();
+        speechRec.lang = "en-US"; speechRec.continuous = true; speechRec.interimResults = true;
+        speechRec.onresult = e => {
+          let final = "";
+          for (let i=0;i<e.results.length;i++) if(e.results[i].isFinal) final+=e.results[i][0].transcript+" ";
+          if (final) {
+            transcriptText += final;
+            const box = document.getElementById("transcript-box");
+            box.style.display = "block";
+            box.textContent = "🗣 " + transcriptText;
+          }
+        };
+        speechRec.start();
+      }
+
+      recording = true;
+      document.getElementById("mic-btn").classList.add("recording");
+      document.getElementById("mic-btn").textContent = "⏹";
+      document.getElementById("mic-label").textContent = "Đang ghi âm... Nhấn để dừng";
+    } catch(e) {
+      showError("Không thể truy cập microphone. Hãy cho phép quyền truy cập.");
+    }
+  } else {
+    mediaRec?.stop();
+    speechRec?.stop();
+    recording = false;
+    document.getElementById("mic-btn").classList.remove("recording");
+    document.getElementById("mic-btn").textContent = "🎤";
+    document.getElementById("mic-label").textContent = "Nhấn để ghi lại";
+  }
+}
+
+// Enter để submit nhanh
+document.addEventListener("keydown", e => {
+  if (e.key==="Enter" && e.ctrlKey && currentTab==="text") analyzeText();
+});
+</script>
+</body>
+</html>

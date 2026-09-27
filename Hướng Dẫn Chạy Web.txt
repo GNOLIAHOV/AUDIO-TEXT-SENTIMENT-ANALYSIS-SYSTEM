@@ -1,0 +1,8 @@
+-Cài 2 thư viện này:
+pip install -r requirements.txt
+pip install librosa
+
+-Lệnh chạy:
+python -m uvicorn app:app --reload
+- đường dẫn trang web:
+http://localhost:8000
